@@ -56,7 +56,11 @@ app.post("/register", (req, res) => {
       "INSERT INTO user (username, password, name, gender) VALUES (?,?,?,?)",
       [username, hash, name, gender],
       (err, result) => {
-        console.log(err);
+        if (err) {
+          res.send({ message: "이미 사용중인 아이디입니다." });
+        } else {
+          res.send({ result: result });
+        }
       }
     );
   });
