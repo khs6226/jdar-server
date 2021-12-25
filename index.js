@@ -66,6 +66,146 @@ app.post("/register", (req, res) => {
   });
 });
 
+app.post("/matchregister", (req, res) => {
+  const date = req.body.date;
+  const ownerName = req.body.ownerName;
+  const location = req.body.location;
+
+  db.query(
+    "SELECT userId FROM user WHERE name = ?;",
+    ownerName,
+    (err, result) => {
+      if (err) {
+        res.send({ message: err });
+      } else {
+        db.query(
+          "INSERT INTO jdar.match (date, ownerId, location) VALUES (?,?,?)",
+          [date, result[0].userId, location],
+          (err, result) => {
+            if (err) {
+              res.send({ message: err });
+            } else {
+              res.send({ result: result });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
+app.post("/registerplayer", (req, res) => {
+  const date = req.body.date;
+  const ownerName = req.body.ownerName;
+  const location = req.body.location;
+  const participants = req.body.participants;
+  let matchId;
+
+  db.query(
+    "SELECT userId FROM user WHERE name = ?;",
+    ownerName,
+    (err, result) => {
+      if (err) {
+        console.log("err", err);
+      } else {
+        db.query(
+          "SELECT matchId FROM jdar.match WHERE (ownerId = ? AND date = ? AND location = ?);",
+          [result[0].userId, date, location],
+          (err, result) => {
+            if (err) {
+              console.log("err", err);
+            } else {
+              console.log("matchId", result);
+              matchId = result[0].matchId;
+              participants.forEach((participant) => {
+                db.query(
+                  "SELECT userId FROM user WHERE name = ?;",
+                  participant.name,
+                  (err, result) => {
+                    if (err) {
+                      console.log("err", err);
+                    } else {
+                      console.log("userId", result[0].userId);
+                      db.query(
+                        "INSERT INTO jdar.matchplayer (matchId, playerId, winCount) VALUES (?,?,?)",
+                        [
+                          matchId,
+                          result[0].userId,
+                          parseInt(participant.winCount),
+                        ],
+                        (err, result) => {
+                          if (err) {
+                            console.log("err", err);
+                          } else {
+                            console.log("succeed", result);
+                          }
+                        }
+                      );
+                    }
+                  }
+                );
+              });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
+app.get("/getnames", (req, res) => {
+  db.query("SELECT name FROM user ORDER BY name ASC;", (err, result) => {
+    if (err) {
+      res.send({ message: err });
+    } else {
+      res.send({ result: result });
+    }
+  });
+});
+
+app.get("/getplayerscore", (req, res) => {
+  db.query(
+    "SELECT userId FROM user WHERE name = ?",
+    req.query.name,
+    (err, result) => {
+      if (err) {
+        console.log("err", err);
+      } else {
+        console.log("result", result);
+        db.query(
+          "SELECT winCount FROM matchplayer WHERE playerId = ?",
+          result[0].userId,
+          (err, result) => {
+            if (err) {
+              console.log("err", err);
+            } else {
+              const map = result.map((obj) => {
+                return obj.winCount;
+              });
+              const reducer = (acc, cur) => {
+                console.log("acc", acc);
+                console.log("cur", cur);
+                return acc + cur;
+              };
+              const wins = map.reduce(reducer);
+              const partPoint = result.length * 10;
+              const winPoint = wins * 10;
+              res.send({
+                result: {
+                  name: req.query.name,
+                  partPoint: partPoint,
+                  winPoint: winPoint,
+                  total: partPoint + winPoint,
+                },
+              });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
 app.get("/login", (req, res) => {
   if (req.session.user) {
     res.send({ loggedIn: true, user: req.session.user });
