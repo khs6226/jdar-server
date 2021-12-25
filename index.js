@@ -166,7 +166,7 @@ app.get("/getnames", (req, res) => {
 app.get("/getplayerscore", (req, res) => {
   const playerArr = [];
   db.query(
-    "SELECT DISTINCT name FROM user INNER JOIN matchplayer ON user.userId = matchplayer.playerId ORDER BY name ASC",
+    "SELECT userId, name FROM user ORDER BY name ASC",
     (err, result1) => {
       if (err) {
         console.log("err", err);
@@ -174,68 +174,55 @@ app.get("/getplayerscore", (req, res) => {
         console.log("result1", result1);
         for (let i = 0; i < result1.length; i++) {
           db.query(
-            "SELECT userId FROM user WHERE name = ?",
-            result1[i].name,
+            "SELECT ownerId FROM jdar.match WHERE ownerId = ?",
+            result1[i].userId,
             (err, result2) => {
+              let ownerCount;
               if (err) {
                 console.log("err", err);
               } else {
+                ownerCount = result2.length;
                 console.log("result2", result2);
                 db.query(
-                  "SELECT ownerId FROM jdar.match WHERE ownerId = ?",
-                  result2[0].userId,
+                  "SELECT winCount FROM matchplayer WHERE playerId = ?",
+                  result1[i].userId,
                   (err, result3) => {
-                    let ownerCount;
                     if (err) {
                       console.log("err", err);
                     } else {
-                      ownerCount = result3.length;
                       console.log("result3", result3);
-                      db.query(
-                        "SELECT winCount FROM matchplayer WHERE playerId = ?",
-                        result2[0].userId,
-                        (err, result4) => {
-                          if (err) {
-                            console.log("err", err);
-                          } else {
-                            console.log("result4", result4);
-                            const map = result4.map((obj) => {
-                              return obj.winCount;
-                            });
-                            const reducer = (acc, cur) => {
-                              console.log("acc", acc);
-                              console.log("cur", cur);
-                              return acc + cur;
-                            };
-                            const wins = map.reduce(reducer);
-                            const partPoint = result4.length * 10;
-                            const winPoint = wins * 10;
-                            const ownerPoint = ownerCount * 10;
-                            const total = partPoint + winPoint + ownerPoint;
-                            let lvl;
-                            if (total >= 300) {
-                              lvl = 3;
-                            } else if (total >= 160) {
-                              lvl = 2;
-                            } else {
-                              lvl = 1;
-                            }
+                      const map = result3.map((obj) => {
+                        return obj.winCount;
+                      });
+                      const reducer = (acc, cur) => {
+                        return acc + cur;
+                      };
+                      const wins = map.reduce(reducer, 0);
+                      const partPoint = result3.length * 10;
+                      const winPoint = wins * 10;
+                      const ownerPoint = ownerCount * 10;
+                      const total = partPoint + winPoint + ownerPoint;
+                      let lvl;
+                      if (total >= 300) {
+                        lvl = 3;
+                      } else if (total >= 160) {
+                        lvl = 2;
+                      } else {
+                        lvl = 1;
+                      }
 
-                            playerArr.push({
-                              name: result1[i].name,
-                              partPoint: partPoint,
-                              winPoint: winPoint,
-                              ownerPoint: ownerPoint,
-                              total: total,
-                              level: lvl,
-                            });
-                          }
-                          console.log("arr", playerArr);
-                          if (i === result1.length - 1) {
-                            res.send(JSON.stringify(playerArr));
-                          }
-                        }
-                      );
+                      playerArr.push({
+                        name: result1[i].name,
+                        partPoint: partPoint,
+                        winPoint: winPoint,
+                        ownerPoint: ownerPoint,
+                        total: total,
+                        level: lvl,
+                      });
+                    }
+                    console.log("arr", playerArr);
+                    if (i === result1.length - 1) {
+                      res.send(JSON.stringify(playerArr));
                     }
                   }
                 );
