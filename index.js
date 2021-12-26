@@ -10,6 +10,8 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
 const app = express();
+let db;
+require("dotenv").config();
 
 app.use(express.json());
 app.use(
@@ -34,12 +36,16 @@ app.use(
   })
 );
 
-const db = mysql.createConnection({
-  user: "root",
-  host: "localhost",
-  password: "7116226",
-  database: "jdar",
-});
+if (process.env.IS_HEROKU) {
+  db = mysql.createConnection(process.env.JAWSDB_URL);
+} else {
+  db = mysql.createConnection({
+    host: process.env.MYSQL_HOST,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DB,
+  });
+}
 
 app.post("/register", (req, res) => {
   const username = req.body.username;
