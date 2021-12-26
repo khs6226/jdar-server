@@ -14,12 +14,21 @@ let db;
 require("dotenv").config();
 
 app.use(express.json());
-app.use(
-  cors({
-    origin,
-    methods: ["GET", "POST"],
-  })
-);
+if (process.env.IS_HEROKU) {
+  app.use(
+    cors({
+      origin: ["https://jdar-server.herokuapp.com/"],
+      methods: ["GET", "POST"],
+    })
+  );
+} else {
+  app.use(
+    cors({
+      origin: ["http://localhost:3000"],
+      methods: ["GET", "POST"],
+    })
+  );
+}
 // app.use(cors());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
