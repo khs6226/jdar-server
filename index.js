@@ -17,7 +17,7 @@ app.use(express.json());
 if (process.env.IS_HEROKU) {
   app.use(
     cors({
-      origin: ["https://jdar-client.herokuapp.com/"],
+      origin: ["https://jdar-client.herokuapp.com"],
       methods: ["GET", "POST"],
     })
   );
