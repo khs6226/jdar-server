@@ -94,7 +94,7 @@ app.post("/matchregister", (req, res) => {
         res.send({ message: err });
       } else {
         db.query(
-          "INSERT INTO jdar.match (date, ownerId, location) VALUES (?,?,?)",
+          `INSERT INTO ${process.env.MYSQL_DB}.match (date, ownerId, location) VALUES (?,?,?)`,
           [date, result[0].userId, location],
           (err, result) => {
             if (err) {
@@ -124,7 +124,7 @@ app.post("/registerplayer", (req, res) => {
         console.log("err", err);
       } else {
         db.query(
-          "SELECT matchId FROM jdar.match WHERE (ownerId = ? AND date = ? AND location = ?);",
+          `SELECT matchId FROM ${process.env.MYSQL_DB}.match WHERE (ownerId = ? AND date = ? AND location = ?);`,
           [result[0].userId, date, location],
           (err, result) => {
             if (err) {
@@ -142,7 +142,7 @@ app.post("/registerplayer", (req, res) => {
                     } else {
                       console.log("userId", result[0].userId);
                       db.query(
-                        "INSERT INTO jdar.matchplayer (matchId, playerId, winCount) VALUES (?,?,?)",
+                        `INSERT INTO ${process.env.MYSQL_DB}.matchplayer (matchId, playerId, winCount) VALUES (?,?,?)`,
                         [
                           matchId,
                           result[0].userId,
@@ -189,7 +189,7 @@ app.get("/getplayerscore", (req, res) => {
         console.log("result1", result1);
         for (let i = 0; i < result1.length; i++) {
           db.query(
-            "SELECT ownerId FROM jdar.match WHERE ownerId = ?",
+            `SELECT ownerId FROM ${process.env.MYSQL_DB}.match WHERE ownerId = ?`,
             result1[i].userId,
             (err, result2) => {
               let ownerCount;
